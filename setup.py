@@ -3,12 +3,12 @@ import os
 
 from setuptools import find_packages, setup
 
-NAME = 'Hax-LLM'
-IMPORT_NAME = 'haxllm'
-DESCRIPTION = "Hastur's experiments in scaling LLM to 10B+ parameters with JAX and TPUs."
-URL = 'https://github.com/sbl1996/Hax-LLM'
-EMAIL = 'sbl1996@126.com'
-AUTHOR = 'Hastur'
+NAME = 'DirtyRL'
+IMPORT_NAME = 'dirtyrl'
+DESCRIPTION = ""
+URL = 'https://github.com/sbl1996/dirtyrl'
+EMAIL = 'sbl1996@gmail.com'
+AUTHOR = 'Hastur_official'
 REQUIRES_PYTHON = '>=3.8.0'
 VERSION = None
 
