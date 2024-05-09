@@ -73,8 +73,6 @@ class Args:
     """coefficient of the value function"""
     max_grad_norm: float = 0.5
     """the maximum norm for the gradient clipping"""
-    collect_length: Optional[int] = None
-    """the length of the buffer, only the first `num_steps` will be used for training (partial GAE)"""
 
     actor_device_ids: List[int] = field(default_factory=lambda: [0])
     "the device ids that actor workers will use"
@@ -311,9 +309,7 @@ def actor(
 
         if step > 0:
             # TODO: use cyclic buffer to avoid copying
-            for v in obs.values():
-                v[:step] = v[args.num_steps:].clone()
-            for v in [actions, logprobs, rewards, dones, values]:
+            for v in [obs, actions, logprobs, rewards, dones, values]:
                 v[:step] = v[args.num_steps:].clone()
 
         SPS = int((global_step - warmup_steps) / (time.time() - start_time))
