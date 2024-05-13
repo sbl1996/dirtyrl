@@ -297,13 +297,12 @@ def actor(
             n_e = args.local_num_envs // len(rollout_queues)
             start = iq * n_e
             end = start + n_e
-            d = optree.tree_map(lambda x: x[:, start:end],
-                (obs, actions, logprobs, rewards, dones))
-            data = []
-            for v in d:
-                data.append(v)
-            for v in [next_done_t, next_obs_t]:
-                data.append(v[start:end])
+            data = [
+                *optree.tree_map(lambda x: x[:, start:end],
+                    (obs, actions, logprobs, rewards, dones)),
+                *optree.tree_map(lambda x: x[start:end],
+                    (next_done_t, next_obs_t)),
+            ]
             data = [global_step, *prepare_data(data, device_id)]
             rq.put(data)
 
@@ -396,22 +395,21 @@ def learner(
         bootstrap_start = time.time()
 
         _start = time.time()
-        if args.group_mode == 1:
-            global_step, *data = rollout_queues[0].get()
-        else:
-            data_list = []
-            for rq in rollout_queues:
-                global_step, *data = rq.get()
-                data_list.append(data)
         
         if args.group_mode == 1:
-            obs, actions, logprobs, rewards, dones, next_done, next_obs = data
+            global_step, obs, actions, logprobs, rewards, dones, next_done, next_obs = \
+                rollout_queues[0].get()
         else:
-            data_list = list(zip(*data_list))
-            obs, actions, logprobs, rewards, dones = [
-                torch.cat(d, dim=1) for d in data_list[:5]]
-            next_done, next_obs = [
-                torch.cat(d, dim=0) for d in data_list[5:]]
+            data_list1 = []
+            data_list2 = []
+            for rq in rollout_queues:
+                global_step, *data = rq.get()
+                data_list1.append(data[:5])
+                data_list2.append(data[5:])
+            obs, actions, logprobs, rewards, dones = \
+                optree.tree_map(lambda *x: torch.cat(x, dim=1), *data_list1)
+            next_done, next_obs = optree.tree_map(
+                lambda *x: torch.cat(x, dim=0), *data_list2)
         wait_time = time.time() - _start
 
         with torch.no_grad():
